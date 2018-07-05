@@ -2,7 +2,7 @@
  * FTM_ECUAL.c
  *
  *  Created on: Jun 25, 2018
- *      Author: felic
+ *      Author: Feliciano Angulo (feliciano.angulo.angulo@gmail.com)
  */
 #include "FTM_ECUAL.h"
 #include "fsl_debug_console.h"

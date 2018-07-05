@@ -2,7 +2,7 @@
  * main.c
  *
  *  Created on: Jun 25, 2018
- *      Author: felic
+ *      Author: Feliciano Angulo (feliciano.angulo.angulo@gmail.com)
  */
 
 #include "fsl_debug_console.h"
@@ -19,6 +19,7 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+/*Definiciones para el uso del botón SW3 cómo entrada*/
 #define BOARD_SW_GPIO BOARD_SW3_GPIO
 #define BOARD_SW_PORT BOARD_SW3_PORT
 #define BOARD_SW_GPIO_PIN BOARD_SW3_GPIO_PIN
@@ -39,7 +40,7 @@ uint8_t request = 0;
  ******************************************************************************/
 
 /*!
- * @brief Interrupt service fuction of switch.
+ * @brief Interrupt service function of switch.
  *
  * This function toggles the LED
  */
@@ -73,16 +74,14 @@ int main(void)
 
     /* initialize CAN BAUD RATE CALCULATOR application */
     BRC_Init();
-    /* Init input switch GPIO. */
+    /* Configurar el puerto para el SW3 como entrada. */
 	PORT_SetPinInterruptConfig(BOARD_SW_PORT, BOARD_SW_GPIO_PIN, kPORT_InterruptFallingEdge);
 	EnableIRQ(BOARD_SW_IRQ);
 	GPIO_PinInit(BOARD_SW_GPIO, BOARD_SW_GPIO_PIN, &sw_config);
+
 	printf("\r\n$$$$$$$$ CAN BAUD RATE CALCUALATOR $$$$$$$$$$$$\r\n");
-	printf("\r\nPresione boton SW3 para calcular BaudRate de CAN\r\n");
-	for(uint32_t i = 0; i < 1000; i++)
-	{
-		BRC_CalculateBaudRate(0);
-	}
+	printf("\r\nPresione botón SW3 para calcular BaudRate de CAN\r\n");
+
     while (1)
     {
     	if(request)
@@ -90,7 +89,7 @@ int main(void)
     		/* call method for calculate baud rate */
     		BRC_CalculateBaudRate(0);
     		request = 0;
-    		printf("\r\nPresione boton SW3 para calcular BaudRate de CAN\r\n");
+    		printf("\r\nPresione botón SW3 para calcular BaudRate de CAN\r\n");
     	}
     }
 }

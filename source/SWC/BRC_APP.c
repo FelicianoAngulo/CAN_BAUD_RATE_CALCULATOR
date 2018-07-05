@@ -2,7 +2,7 @@
  * BRC_APP.c
  *
  *  Created on: Jun 25, 2018
- *      Author: felic
+ *      Author: Feliciano Angulo (feliciano.angulo.angulo@gmail.com)
  */
 #include "BRC_APP.h"
 #include "FTM_ECUAL.h"
@@ -23,9 +23,23 @@ uint8_t INDEX_DLC = 15;
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
+/*
+ * Analiza los datos recibidos para detectar y validar que exista un frame de CAN
+ * */
 uint8_t checkCANframe(void);
+/*
+ * Recorre el arreglo AppPulseWidthArray
+ * para obtener el valor minimo de sus elementos.
+ * dicho valor sera considerado como el bit time.
+ * */
 uint8_t checkBitTime(void);
+/*
+ * Imprime el resultado con los detalles del Mensaje leido.
+ * */
 void printResults(void);
+/*
+ * limpia los valosres de las variables usadas antes de iniciar un nueva captura.
+ * */
 void cleanOldData(void);
 /*******************************************************************************
  * Variables
@@ -60,7 +74,7 @@ struct canMsg
 /*
  * Inicializació de la aplicación
  * */
-void BRC_Init()
+void BRC_Init(void)
 {
 	/* Inicializar el bit time en un vlaor lo suficiente alto par aque sea mayor que un posibe bit time capturado.*/
 	CAN_MSG.bit_time = 0xFFFF;
@@ -81,6 +95,9 @@ uint32_t BRC_CalculateBaudRate(uint8_t channel)
 {
 	uint8_t success = 0;
 	uint16_t tryCounter = 100;
+	/*Realizar tantos intentos como el valor en tryCounter
+	 * mientras el resultado no sea exitoso
+	 * */
 	for(uint8_t i = 0; i < tryCounter; i++)
 	{
 		if(channel < MAX_IN_CAP)
@@ -148,7 +165,9 @@ uint8_t checkCANframe(void)
 		return 0;
 	}
 	interframe_length = CAN_MSG.bit_time * 12;
-	// Obtener la dirección de inicio y fin de un frame de CAN
+	/* Obtener la dirección de inicio y fin de un frame de CAN
+	 * buscando pulsos mayores o iguales a interframe_length
+	 * */
 	for(uint32_t i = 0; i < ARRAY_LENGTH; i++)
 	{
 		if(AppPulseWidthArray[i] >= interframe_length)
@@ -200,7 +219,7 @@ uint8_t checkCANframe(void)
 			}
 		}
 	}
-	// analizar el fram guradado previamente en canDataArray
+	// analizar el frame guradado previamente en canDataArray
 	/* extract ID */
 	if(canDataArray[INDEX_RTR] == 0 && canDataArray[INDEX_IDE] == 0)
 	{
@@ -284,7 +303,7 @@ uint8_t checkBitTime(void)
 }
 
 /*
- *
+ * limpia los valosres de las variables usadas antes de iniciar un nueva captura.
  * */
 void cleanOldData(void)
 {
