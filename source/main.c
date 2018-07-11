@@ -80,7 +80,7 @@ int main(void)
 	GPIO_PinInit(BOARD_SW_GPIO, BOARD_SW_GPIO_PIN, &sw_config);
 
 	printf("\r\n$$$$$$$$ CAN BAUD RATE CALCUALATOR $$$$$$$$$$$$\r\n");
-	printf("\r\nPresione botón SW3 para calcular BaudRate de CAN\r\n");
+	printf("\r\nPresione boton SW3 para calcular BaudRate de CAN\r\n");
 
     while (1)
     {
@@ -89,7 +89,7 @@ int main(void)
     		/* call method for calculate baud rate */
     		BRC_CalculateBaudRate(0);
     		request = 0;
-    		printf("\r\nPresione botón SW3 para calcular BaudRate de CAN\r\n");
+    		printf("\r\nPresione boton SW3 para calcular BaudRate de CAN\r\n");
     	}
     }
 }
