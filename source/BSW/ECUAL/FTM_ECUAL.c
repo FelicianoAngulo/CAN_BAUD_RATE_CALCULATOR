@@ -70,11 +70,6 @@ void FTM_ECUAL_Init(uint8_t channelID)
     FTM_SetTimerPeriod(BOARD_FTM_BASEADDR, 0xFFFF);
     /* Enable at the NVIC */
     EnableIRQ(FTM_INTERRUPT_NUMBER);
-    /*inicializa la memoria para los arreglos*/
-	if(!captureArray)
-		captureArray = (float *)malloc(sizeof(float) * CAPTURE_SIZE);
-	if(!ofArray)
-		ofArray = (uint32_t *)malloc(sizeof(uint32_t) * CAPTURE_SIZE);
 }
 
 /*Inicia la captura de pulsos con el canal correspondiente*/
@@ -85,6 +80,11 @@ uint8_t FTM_ECAL_GET_DATA(uint8_t channel, uint32_t * arrayForPulses, uint16_t l
 	captureCounter = 0;
 	of_counter = 0;
 	captureFinishedFlag = false;
+	/*inicializa la memoria para los arreglos*/
+	if(!captureArray)
+		captureArray = (float *)malloc(sizeof(float) * CAPTURE_SIZE);
+	if(!ofArray)
+		ofArray = (uint32_t *)malloc(sizeof(uint32_t) * CAPTURE_SIZE);
 	/* Enable channel interrupt when the second edge is detected */
 	FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE);
 	FTM_StartTimer(BOARD_FTM_BASEADDR, kFTM_SystemClock);
