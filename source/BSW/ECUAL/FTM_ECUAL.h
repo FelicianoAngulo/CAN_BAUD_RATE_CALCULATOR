@@ -16,11 +16,11 @@ typedef struct
 } caputureType;
 
 /*
- * Inicializa el module FTM ECUAL
+ * Initializes the FTM ECUAL module
  * */
 void FTM_ECUAL_Init(uint8_t channelID);
 /*
- * Inicia la captura de pulsos con el canal correspondiente
+ * Starts pulse capture with the corresponding channel
  * */
 uint8_t FTM_ECAL_GET_DATA(uint8_t channel, uint32_t * arrayForPulses, uint16_t length);
 

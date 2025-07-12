@@ -24,28 +24,28 @@ uint8_t INDEX_DLC = 15;
  * Prototypes
  ******************************************************************************/
 /*
- * Analiza los datos recibidos para detectar y validar que exista un frame de CAN
+ * Analyzes the data received to detect and validate the existence of a CAN frame.
  * */
 uint8_t checkCANframe(void);
 /*
- * Recorre el arreglo AppPulseWidthArray
- * para obtener el valor minimo de sus elementos.
- * dicho valor sera considerado como el bit time.
+ * Go through the AppPulseWidthArray array
+ * to get the minimum value of its elements.
+ * this value will be considered as the bit time.
  * */
 uint8_t checkBitTime(void);
 /*
- * Imprime el resultado con los detalles del Mensaje leido.
+ * Prints the result with the details of the read message.
  * */
 void printResults(void);
 /*
- * limpia los valosres de las variables usadas antes de iniciar un nueva captura.
+ * Cleans the values of the variables used before starting a new capture.
  * */
 void cleanOldData(void);
 /*******************************************************************************
  * Variables
  ******************************************************************************/
 
-/* Este arreglo conendra los  */
+/* This array will contain the pulse widths */
 //uint32_t * AppPulseWidthArray;
 uint32_t AppPulseWidthArray[ARRAY_LENGTH];
 uint32_t baudeRates[MAX_IN_CAP] = {0};
@@ -57,7 +57,7 @@ uint8_t captureChannelList[MAX_IN_CAP] =
 	IN_CAP0
 };
 
-/*estructura para guardar los datos de un frame de can despues de leerlos*/
+/* Structure to store the data of a CAN frame after reading it */
 struct canMsg
 {
 	uint32_t bit_time;
@@ -72,31 +72,31 @@ struct canMsg
  ******************************************************************************/
 
 /*
- * Inicializació de la aplicación
+ * Application initialization
  * */
 void BRC_Init(void)
 {
-	/* Inicializar el bit time en un vlaor lo suficiente alto par aque sea mayor que un posibe bit time capturado.*/
+	/* Initialize the bit time to a value high enough to be greater than a possible captured bit time.*/
 	CAN_MSG.bit_time = 0xFFFF;
 	/*initialize FTM ECUAL */
 	for(uint8_t i = 0; i < MAX_IN_CAP; i++)
 	{
-		/* llamada al ECUAL ara inicializar el FTM de todos los canales disponibles.*/
+		/* call to ECUAL to initialize the FTM of all available channels.*/
 		FTM_ECUAL_Init(captureChannelList[i]);
 	}
 	//printf("BRC Init\r\n");
 }
 
 /*
- * Esta función inicia la captura de pulsos en el bus de CAN,
- * el resultado se gurdad en AppPulseWidthArray
+ * This function starts capturing pulses on the CAN bus,
+ * the result is saved in AppPulseWidthArray
  * */
 uint32_t BRC_CalculateBaudRate(uint8_t channel)
 {
 	uint8_t success = 0;
 	uint16_t tryCounter = 100;
-	/*Realizar tantos intentos como el valor en tryCounter
-	 * mientras el resultado no sea exitoso
+	/*Perform as many attempts as the value in tryCounter
+	 * while the result is not successful
 	 * */
 	for(uint8_t i = 0; i < tryCounter; i++)
 	{
@@ -126,7 +126,7 @@ uint32_t BRC_CalculateBaudRate(uint8_t channel)
 }
 
 /*
- * Imprime el resultado con los detalles del Mensaje leido.
+ * Prints the result with the details of the read message.
  * */
 void printResults(void)
 {
@@ -143,9 +143,9 @@ void printResults(void)
 }
 
 /*
- * Analiza los datos recibidos en AppPulseWidthArray
- * decodifica el contenido para validar si exise algun mensaje de CAN
- * además verifica el bit time
+ * Analyzes the data received in AppPulseWidthArray
+ * decodes the content to validate if there is any CAN message
+ * also checks the bit time
  * */
 uint8_t checkCANframe(void)
 {
@@ -159,14 +159,14 @@ uint8_t checkCANframe(void)
 	uint8_t index_data = 0;
 	uint8_t aux = 0;
 	cleanOldData();
-	/* Obtener el bit time*/
+	/* Get the bit time*/
 	if(!checkBitTime())
 	{
 		return 0;
 	}
 	interframe_length = CAN_MSG.bit_time * 12;
-	/* Obtener la dirección de inicio y fin de un frame de CAN
-	 * buscando pulsos mayores o iguales a interframe_length
+	/* Get the start and end address of a CAN frame
+	 * by searching for pulses greater than or equal to interframe_length
 	 * */
 	for(uint32_t i = 0; i < ARRAY_LENGTH; i++)
 	{
@@ -179,15 +179,15 @@ uint8_t checkCANframe(void)
 			else
 			{
 				frameStopIndex = i - 1;
-				/*Convertir los pulsos a valores loginos 1/0
-				 * remueve el bit stuffing cuando este existe.
+				/*Convert pulses to logical values 1/0
+				 * removes bit stuffing when it exists.
 				 * */
 				for(uint32_t i = frameStartIndex; i <= frameStopIndex; i++)
 				{
 					bit_counter = AppPulseWidthArray[i] / CAN_MSG.bit_time;
 					if(bit_counter < 6)
 					{
-						/*se usa is_stuffing  para omitir el primer bit(stuffing) cuando este vale 1*/
+						/*is_stuffing is used to omit the first bit (stuffing) when it is 1*/
 						for(uint8_t j = is_stuffing; j < bit_counter; j++)
 						{
 							////printf("%d", bus_level);
@@ -207,19 +207,19 @@ uint8_t checkCANframe(void)
 				}
 				if(data_counter > MIN_FRAME_LEN)
 				{
-					/*cumple longitud mínima para ser un frame de CAN*/
+					/*meets minimum length to be a CAN frame*/
 					break;
 				}
 				else
 				{
-					/*continuar analizando el arreglo*/
+					/*continue analyzing the array*/
 					data_counter = 0;
 					frameStartIndex = frameStopIndex + 2;
 				}
 			}
 		}
 	}
-	// analizar el frame guradado previamente en canDataArray
+	// analyze the frame previously saved in canDataArray
 	/* extract ID */
 	if(canDataArray[INDEX_RTR] == 0 && canDataArray[INDEX_IDE] == 0)
 	{
@@ -277,9 +277,9 @@ uint8_t checkCANframe(void)
 }
 
 /*
- * Recorre el arreglo AppPulseWidthArray
- * para obtener el valor minimo de sus elementos.
- * dicho valor sera considerado como el bit time.
+ * Go through the AppPulseWidthArray array
+ * to get the minimum value of its elements.
+ * this value will be considered as the bit time.
  * */
 uint8_t checkBitTime(void)
 {
@@ -303,7 +303,7 @@ uint8_t checkBitTime(void)
 }
 
 /*
- * limpia los valosres de las variables usadas antes de iniciar un nueva captura.
+ * Cleans the values of the variables used before starting a new capture.
  * */
 void cleanOldData(void)
 {

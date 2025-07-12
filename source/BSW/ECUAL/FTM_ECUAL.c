@@ -30,29 +30,29 @@
 #define FTM_CHANNEL_FLAG kFTM_Chnl0Flag
 #define FTM_OFI_FLAG kFTM_TimeOverflowFlag
 
-/*Se usa para guardar el ancho de pulso*/
+/*Used to store the pulse width*/
 uint32_t * pulseWidthArray;
-/* se usa para guardar los valoes del timer en cada interrupción del FTM */
+/* Used to store timer values at each FTM interrupt */
 float * captureArray;
 //float captureArray[arrayLength];
-/*se usa para gurdar el valor del contador de overflow del timer*/
+/*Used to store the timer overflow counter value*/
 uint32_t * ofArray;
 //uint32_t ofArray[arrayLength];
-/*Se utiiza para señalizar cuando se han terminado las capturas*/
+/*Used to signal when captures have finished*/
 volatile bool captureFinishedFlag = false;
-/*almacenará el valor necesario de capturas*/
+/*Will store the required number of captures*/
 uint16_t CAPTURE_SIZE = 0;
-/*se usa para llevar el control del numero de capturas*/
+/*Used to keep track of the number of captures*/
 uint32_t captureCounter = 0;
-/*Se usa para contabilizar las veces que ocurre un overflow del time*/
+/*Used to count the number of timer overflows*/
 uint32_t of_counter = 0;
 
-/*convierte los valores del contador a pulsos con unidades de tiempo uS*/
+/*Converts counter values to pulses with time units in microseconds*/
 uint8_t convertToTime(void);
-/*redondea un numero al entero mas cercano*/
+/*rounds a number to the nearest integer*/
 float roundNearest(float val);
 
-/*Inicializa el module de FTM*/
+/*Initialize the FTM module*/
 void FTM_ECUAL_Init(uint8_t channelID)
 {
 	ftm_config_t ftmInfo;
@@ -72,7 +72,7 @@ void FTM_ECUAL_Init(uint8_t channelID)
     EnableIRQ(FTM_INTERRUPT_NUMBER);
 }
 
-/*Inicia la captura de pulsos con el canal correspondiente*/
+/*Starts pulse capture with the corresponding channel*/
 uint8_t FTM_ECAL_GET_DATA(uint8_t channel, uint32_t * arrayForPulses, uint16_t length)
 {
 	pulseWidthArray = arrayForPulses;
@@ -80,7 +80,7 @@ uint8_t FTM_ECAL_GET_DATA(uint8_t channel, uint32_t * arrayForPulses, uint16_t l
 	captureCounter = 0;
 	of_counter = 0;
 	captureFinishedFlag = false;
-	/*inicializa la memoria para los arreglos*/
+	/*initialize memory for arrays*/
 	if(!captureArray)
 		captureArray = (float *)malloc(sizeof(float) * CAPTURE_SIZE);
 	if(!ofArray)
@@ -96,11 +96,11 @@ uint8_t FTM_ECAL_GET_DATA(uint8_t channel, uint32_t * arrayForPulses, uint16_t l
 
 	FTM_StopTimer(BOARD_FTM_BASEADDR);
 	//FTM_Deinit(BOARD_FTM_BASEADDR);
-	/*Regresa 1 si todo fue exitoso, 0 si ha fallado*/
+	/*Returns 1 if successful, 0 if failed*/
 	return convertToTime();
 }
 
-/*convierte los valores del contador a pulsos con unidades de tiempo uS*/
+/*converts counter values to pulses with time units in microseconds*/
 uint8_t convertToTime(void)
 {
 	float currentPulseWidth;
@@ -113,8 +113,8 @@ uint8_t convertToTime(void)
 	{
 		if(ofArray[i] == 0)
 		{
-			/*se calcura el ancho de pulso con la formula ancho = t2 - t1
-			 * pero se considera si el contador se ha desbordado.
+			/*Calculates the pulse width with the formula width = t2 - t1
+			 * taking into account if the counter has overflowed.
 			 * */
 			if(captureArray[i] <= captureArray[i - 1])
 			{
@@ -145,7 +145,7 @@ uint8_t convertToTime(void)
 	return 1;
 }
 
-/*MAnejadr de la interrupcion del FTM*/
+/*FTM interrupt handler*/
 void FTM_INPUT_CAPTURE_HANDLER(void)
 {
 	if ((FTM_GetStatusFlags(BOARD_FTM_BASEADDR) & FTM_CHANNEL_FLAG) == FTM_CHANNEL_FLAG)
@@ -172,7 +172,7 @@ void FTM_INPUT_CAPTURE_HANDLER(void)
 		}
 }
 
-/*redondea un numero al entero mas cercano*/
+/*rounds a number to the nearest integer*/
 float roundNearest(float val)
 {
 	float int_part = (float)(uint32_t)val;

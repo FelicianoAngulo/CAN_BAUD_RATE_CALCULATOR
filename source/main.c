@@ -13,13 +13,13 @@
 #include "fsl_gpio.h"
 #include "fsl_common.h"
 
-/* Interface con aplicación Baud Rate Calculator */
+/* Interface with appication Baud Rate Calculator */
 #include "BRC_APP.h"
 
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-/*Definiciones para el uso del botón SW3 cómo entrada*/
+/*Definitions for using SW3 button as input*/
 #define BOARD_SW_GPIO BOARD_SW3_GPIO
 #define BOARD_SW_PORT BOARD_SW3_PORT
 #define BOARD_SW_GPIO_PIN BOARD_SW3_GPIO_PIN
@@ -74,13 +74,13 @@ int main(void)
 
     /* initialize CAN BAUD RATE CALCULATOR application */
     BRC_Init();
-    /* Configurar el puerto para el SW3 como entrada. */
+    /* Configure SW3 port as input. */
 	PORT_SetPinInterruptConfig(BOARD_SW_PORT, BOARD_SW_GPIO_PIN, kPORT_InterruptFallingEdge);
 	EnableIRQ(BOARD_SW_IRQ);
 	GPIO_PinInit(BOARD_SW_GPIO, BOARD_SW_GPIO_PIN, &sw_config);
 
-	printf("\r\n$$$$$$$$ CAN BAUD RATE CALCUALATOR $$$$$$$$$$$$\r\n");
-	printf("\r\nPresione boton SW3 para calcular BaudRate de CAN\r\n");
+	printf("\r\n$$$$$$$$ CAN BAUD RATE CALCULATOR $$$$$$$$$$$$\r\n");
+	printf("\r\nPress SW3 button to calculate CAN BaudRate\r\n");
 
     while (1)
     {
@@ -89,7 +89,7 @@ int main(void)
     		/* call method for calculate baud rate */
     		BRC_CalculateBaudRate(0);
     		request = 0;
-    		printf("\r\nPresione boton SW3 para calcular BaudRate de CAN\r\n");
+    		printf("\r\nPress SW3 button to calculate CAN BaudRate\r\n");
     	}
     }
 }

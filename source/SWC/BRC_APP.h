@@ -17,12 +17,12 @@ typedef enum inputCaptureNumber
 } _inputCaptureNumber;
 
 /*
- * Inicializació de la aplicación
+ * Application initialization
  * */
 void BRC_Init(void);
 /*
- * Esta función inicia la captura de pulsos en el bus de CAN,
- * el resultado se gurdad en AppPulseWidthArray
+ * This function starts pulse capture on the CAN bus,
+ * the result is stored in AppPulseWidthArray
  * */
 uint32_t BRC_CalculateBaudRate(uint8_t channel);
 
