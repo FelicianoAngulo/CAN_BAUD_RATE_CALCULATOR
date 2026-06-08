@@ -52,27 +52,36 @@ uint8_t convertToTime(void);
 /*rounds a number to the nearest integer*/
 float roundNearest(float val);
 
-/*Initialize the FTM module*/
+/*
+ * Initialize the FTM input capture module for the selected channel.
+ * This configures the peripheral to capture both rising and falling edges
+ * so that pulse widths can be measured in timer counts.
+ */
 void FTM_ECUAL_Init(uint8_t channelID)
 {
 	ftm_config_t ftmInfo;
     FTM_GetDefaultConfig(&ftmInfo);
     ftmInfo.prescale = kFTM_Prescale_Divide_1;
-    /* Initialize FTM module */
     FTM_Init(BOARD_FTM_BASEADDR, &ftmInfo);
 
-    /* Setup dual-edge capture on a FTM channel pair */
+    /* Setup dual-edge capture on the configured FTM channel. */
     FTM_SetupInputCapture(BOARD_FTM_BASEADDR, BOARD_FTM_INPUT_CAPTURE_CHANNEL,
-    		kFTM_RiseAndFallEdge, 0);
+			kFTM_RiseAndFallEdge, 0);
 
-    /* Set the timer to be in free-running mode */
-    //BOARD_FTM_BASEADDR->MOD = 0xFFFF;
+    /* Configure the free-running timer period and enable the IRQ. */
     FTM_SetTimerPeriod(BOARD_FTM_BASEADDR, 0xFFFF);
-    /* Enable at the NVIC */
     EnableIRQ(FTM_INTERRUPT_NUMBER);
 }
 
-/*Starts pulse capture with the corresponding channel*/
+/*
+ * Capture pulse widths from the selected FTM channel into the provided buffer.
+ *
+ * The function starts the FTM timer, enables capture interrupts, and waits until
+ * the requested number of edges have been captured.
+ *
+ * Returns 1 on successful conversion, or 0 if the captured data could not be
+ * translated into valid pulse widths.
+ */
 uint8_t FTM_ECAL_GET_DATA(uint8_t channel, uint32_t * arrayForPulses, uint16_t length)
 {
 	pulseWidthArray = arrayForPulses;
@@ -80,33 +89,32 @@ uint8_t FTM_ECAL_GET_DATA(uint8_t channel, uint32_t * arrayForPulses, uint16_t l
 	captureCounter = 0;
 	of_counter = 0;
 	captureFinishedFlag = false;
-	/*initialize memory for arrays*/
 	if(!captureArray)
 		captureArray = (float *)malloc(sizeof(float) * CAPTURE_SIZE);
 	if(!ofArray)
 		ofArray = (uint32_t *)malloc(sizeof(uint32_t) * CAPTURE_SIZE);
-	/* Enable channel interrupt when the second edge is detected */
 	FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE);
 	FTM_StartTimer(BOARD_FTM_BASEADDR, kFTM_SystemClock);
 
-	/* wait for finish capture */
 	while (captureFinishedFlag != true)
 	{
 	}
 
 	FTM_StopTimer(BOARD_FTM_BASEADDR);
-	//FTM_Deinit(BOARD_FTM_BASEADDR);
-	/*Returns 1 if successful, 0 if failed*/
 	return convertToTime();
 }
 
-/*converts counter values to pulses with time units in microseconds*/
+/*
+ * Convert the captured timer counts into pulse width values in microseconds.
+ *
+ * The algorithm accounts for timer overflows and uses a fixed scaling factor
+ * to translate counter ticks into microseconds.
+ */
 uint8_t convertToTime(void)
 {
 	float currentPulseWidth;
 	float div = FTM_SOURCE_CLOCK;
 	div = (div / 1) / 1000000;
-	//div = 1000000000 / div;
 	float fac = 0.016666666;
 
 	for(uint16_t i = 1; i < CAPTURE_SIZE; i++)
@@ -145,7 +153,12 @@ uint8_t convertToTime(void)
 	return 1;
 }
 
-/*FTM interrupt handler*/
+/*
+ * Interrupt handler for the FTM input capture peripheral.
+ *
+ * Captured timer values and overflow counts are stored until the requested
+ * number of samples has been collected.
+ */
 void FTM_INPUT_CAPTURE_HANDLER(void)
 {
 	if ((FTM_GetStatusFlags(BOARD_FTM_BASEADDR) & FTM_CHANNEL_FLAG) == FTM_CHANNEL_FLAG)
@@ -172,7 +185,9 @@ void FTM_INPUT_CAPTURE_HANDLER(void)
 		}
 }
 
-/*rounds a number to the nearest integer*/
+/*
+ * Round a floating-point value to the nearest integer.
+ */
 float roundNearest(float val)
 {
 	float int_part = (float)(uint32_t)val;

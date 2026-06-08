@@ -72,32 +72,34 @@ struct canMsg
  ******************************************************************************/
 
 /*
- * Application initialization
- * */
+ * Initialize the CAN baud rate calculator application state.
+ * This prepares the message buffer and initializes the FTM input capture module.
+ */
 void BRC_Init(void)
 {
-	/* Initialize the bit time to a value high enough to be greater than a possible captured bit time.*/
+	/* Initialize the bit time to a value high enough to be greater than a possible captured bit time. */
 	CAN_MSG.bit_time = 0xFFFF;
-	/*initialize FTM ECUAL */
+	/* Initialize the FTM input capture module for all available capture channels. */
 	for(uint8_t i = 0; i < MAX_IN_CAP; i++)
 	{
-		/* call to ECUAL to initialize the FTM of all available channels.*/
 		FTM_ECUAL_Init(captureChannelList[i]);
 	}
-	//printf("BRC Init\r\n");
 }
 
 /*
- * This function starts capturing pulses on the CAN bus,
- * the result is saved in AppPulseWidthArray
- * */
+ * Capture CAN waveform pulses, decode a CAN frame if possible, and calculate the baud rate.
+ *
+ * Parameters:
+ *   channel - input capture channel index to use for the measurement.
+ *
+ * Returns:
+ *   Calculated baud rate in bps when successful, or 0 if the capture or decoding failed.
+ */
 uint32_t BRC_CalculateBaudRate(uint8_t channel)
 {
 	uint8_t success = 0;
 	uint16_t tryCounter = 100;
-	/*Perform as many attempts as the value in tryCounter
-	 * while the result is not successful
-	 * */
+	/* Attempt multiple captures until a valid CAN frame is decoded or retries expire. */
 	for(uint8_t i = 0; i < tryCounter; i++)
 	{
 		if(channel < MAX_IN_CAP)
@@ -126,11 +128,10 @@ uint32_t BRC_CalculateBaudRate(uint8_t channel)
 }
 
 /*
- * Prints the result with the details of the read message.
- * */
+ * Print the decoded CAN frame information and the calculated baud rate.
+ */
 void printResults(void)
 {
-	/*check baud rate*/
 	br_calculated = (1000000 / CAN_MSG.bit_time);
 	printf("\r\nBIT TIME = %duS\r\n", CAN_MSG.bit_time);
 	printf("\r\nBAUDRATE = %dKbps\r\n", br_calculated / 1000);
@@ -143,10 +144,18 @@ void printResults(void)
 }
 
 /*
- * Analyzes the data received in AppPulseWidthArray
- * decodes the content to validate if there is any CAN message
- * also checks the bit time
- * */
+ * Analyze the captured pulse widths to detect a CAN frame.
+ *
+ * This function:
+ *   - computes the bit time from the captured pulses
+ *   - finds the interframe gap boundaries
+ *   - converts pulse widths into logical bits
+ *   - removes CAN bit stuffing
+ *   - extracts the CAN identifier, DLC, and data bytes
+ *
+ * Returns:
+ *   1 if a valid frame was decoded, 0 otherwise.
+ */
 uint8_t checkCANframe(void)
 {
 	uint32_t interframe_length = 0;
@@ -159,15 +168,13 @@ uint8_t checkCANframe(void)
 	uint8_t index_data = 0;
 	uint8_t aux = 0;
 	cleanOldData();
-	/* Get the bit time*/
+	/* Get the bit time from the captured pulse array. */
 	if(!checkBitTime())
 	{
 		return 0;
 	}
 	interframe_length = CAN_MSG.bit_time * 12;
-	/* Get the start and end address of a CAN frame
-	 * by searching for pulses greater than or equal to interframe_length
-	 * */
+	/* Locate CAN frame boundaries by searching for a long interframe gap. */
 	for(uint32_t i = 0; i < ARRAY_LENGTH; i++)
 	{
 		if(AppPulseWidthArray[i] >= interframe_length)
@@ -179,18 +186,14 @@ uint8_t checkCANframe(void)
 			else
 			{
 				frameStopIndex = i - 1;
-				/*Convert pulses to logical values 1/0
-				 * removes bit stuffing when it exists.
-				 * */
+				/* Convert pulse widths into raw CAN bits and remove bit stuffing. */
 				for(uint32_t i = frameStartIndex; i <= frameStopIndex; i++)
 				{
 					bit_counter = AppPulseWidthArray[i] / CAN_MSG.bit_time;
 					if(bit_counter < 6)
 					{
-						/*is_stuffing is used to omit the first bit (stuffing) when it is 1*/
 						for(uint8_t j = is_stuffing; j < bit_counter; j++)
 						{
-							////printf("%d", bus_level);
 							canDataArray[data_counter] = bus_level;
 							data_counter++;
 						}
@@ -207,23 +210,19 @@ uint8_t checkCANframe(void)
 				}
 				if(data_counter > MIN_FRAME_LEN)
 				{
-					/*meets minimum length to be a CAN frame*/
 					break;
 				}
 				else
 				{
-					/*continue analyzing the array*/
 					data_counter = 0;
 					frameStartIndex = frameStopIndex + 2;
 				}
 			}
 		}
 	}
-	// analyze the frame previously saved in canDataArray
-	/* extract ID */
+	/* Validate the CAN frame format and extract identifier bits. */
 	if(canDataArray[INDEX_RTR] == 0 && canDataArray[INDEX_IDE] == 0)
 	{
-		//standard frame
 		CAN_MSG.isFD = 0;
 		INDEX_DLC = 15;
 		for(uint8_t i = 1; i < INDEX_RTR; i++)
@@ -233,7 +232,6 @@ uint8_t checkCANframe(void)
 	}
 	else if(canDataArray[INDEX_RTR] == 1 && data_counter > (MIN_FRAME_LEN + 19) && canDataArray[INDEX_RTR_X] == 0 && canDataArray[INDEX_IDE] == 1)
 	{
-		//extended frame
 		CAN_MSG.isFD = 1;
 		INDEX_DLC = 35;
 		for(uint8_t i = 1; i < INDEX_RTR_X; i++)
@@ -277,10 +275,11 @@ uint8_t checkCANframe(void)
 }
 
 /*
- * Go through the AppPulseWidthArray array
- * to get the minimum value of its elements.
- * this value will be considered as the bit time.
- * */
+ * Find the smallest captured pulse width and use it as the nominal CAN bit time.
+ *
+ * Returns:
+ *   1 if a valid bit time was found, 0 otherwise.
+ */
 uint8_t checkBitTime(void)
 {
 	CAN_MSG.bit_time = 0xFFFF;
@@ -290,7 +289,6 @@ uint8_t checkBitTime(void)
 		{
 			CAN_MSG.bit_time = AppPulseWidthArray[i];
 		}
-		//printf("%d\r\n", AppPulseWidthArray[i]);
 	}
 	if(CAN_MSG.bit_time > 0 && CAN_MSG.bit_time < 1000)
 	{
@@ -303,8 +301,8 @@ uint8_t checkBitTime(void)
 }
 
 /*
- * Cleans the values of the variables used before starting a new capture.
- * */
+ * Reset the decoded CAN frame state before processing a new capture.
+ */
 void cleanOldData(void)
 {
 	CAN_MSG.DLC = 0;
