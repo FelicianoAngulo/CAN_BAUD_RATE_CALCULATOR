@@ -16,12 +16,17 @@ typedef struct
 } caputureType;
 
 /*
- * Inicializa el module FTM ECUAL
- * */
+ * Initialize the FTM ECUAL module for input capture.
+ */
 void FTM_ECUAL_Init(uint8_t channelID);
 /*
- * Inicia la captura de pulsos con el canal correspondiente
- * */
+ * Capture pulse width measurements from the selected channel.
+ *
+ * Parameters:
+ *   channel - input capture channel index
+ *   arrayForPulses - destination buffer for pulse widths in microseconds
+ *   length - number of pulse widths to capture
+ */
 uint8_t FTM_ECAL_GET_DATA(uint8_t channel, uint32_t * arrayForPulses, uint16_t length);
 
 #endif /* BSW_ECUAL_FTM_ECUAL_H_ */

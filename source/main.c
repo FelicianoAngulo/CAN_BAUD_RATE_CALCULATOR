@@ -13,13 +13,13 @@
 #include "fsl_gpio.h"
 #include "fsl_common.h"
 
-/* Interface con aplicación Baud Rate Calculator */
+/* Interface with appication Baud Rate Calculator */
 #include "BRC_APP.h"
 
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-/*Definiciones para el uso del botón SW3 cómo entrada*/
+/*Definitions for using SW3 button as input*/
 #define BOARD_SW_GPIO BOARD_SW3_GPIO
 #define BOARD_SW_PORT BOARD_SW3_PORT
 #define BOARD_SW_GPIO_PIN BOARD_SW3_GPIO_PIN
@@ -40,15 +40,16 @@ uint8_t request = 0;
  ******************************************************************************/
 
 /*!
- * @brief Interrupt service function of switch.
+ * @brief Interrupt service function for the SW3 button.
  *
- * This function toggles the LED
+ * The handler clears the GPIO interrupt flag and sets a request flag
+ * to begin CAN baud rate capture in the main loop.
  */
 void BOARD_SW_IRQ_HANDLER(void)
 {
     /* Clear external interrupt flag. */
     GPIO_PortClearInterruptFlags(BOARD_SW_GPIO, 1U << BOARD_SW_GPIO_PIN);
-    /* Change state of button. */
+    /* Signal the main loop that a capture request has arrived. */
     request = 1;
     /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
       exception return operation might vector to incorrect interrupt */
@@ -59,7 +60,10 @@ void BOARD_SW_IRQ_HANDLER(void)
 
 
 /*!
- * @brief Main function
+ * @brief Main application entry point.
+ *
+ * Initializes board peripherals and the CAN baud rate calculator application,
+ * then waits for the SW3 button to trigger capture and measurement.
  */
 int main(void)
 {
@@ -72,24 +76,25 @@ int main(void)
     BOARD_BootClockRUN();
     BOARD_InitDebugConsole();
 
-    /* initialize CAN BAUD RATE CALCULATOR application */
+    /* Initialize CAN baud rate calculator application. */
     BRC_Init();
-    /* Configurar el puerto para el SW3 como entrada. */
+
+    /* Configure SW3 port as falling-edge interrupt input. */
 	PORT_SetPinInterruptConfig(BOARD_SW_PORT, BOARD_SW_GPIO_PIN, kPORT_InterruptFallingEdge);
 	EnableIRQ(BOARD_SW_IRQ);
 	GPIO_PinInit(BOARD_SW_GPIO, BOARD_SW_GPIO_PIN, &sw_config);
 
-	printf("\r\n$$$$$$$$ CAN BAUD RATE CALCUALATOR $$$$$$$$$$$$\r\n");
-	printf("\r\nPresione boton SW3 para calcular BaudRate de CAN\r\n");
+	printf("\r\n$$$$$$$$ CAN BAUD RATE CALCULATOR $$$$$$$$$$$$\r\n");
+	printf("\r\nPress SW3 button to calculate CAN BaudRate\r\n");
 
     while (1)
     {
     	if(request)
     	{
-    		/* call method for calculate baud rate */
+    		/* Perform a CAN baud rate capture and calculation. */
     		BRC_CalculateBaudRate(0);
     		request = 0;
-    		printf("\r\nPresione boton SW3 para calcular BaudRate de CAN\r\n");
+    		printf("\r\nPress SW3 button to calculate CAN BaudRate\r\n");
     	}
     }
 }

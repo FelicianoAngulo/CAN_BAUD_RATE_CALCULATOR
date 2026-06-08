@@ -17,13 +17,19 @@ typedef enum inputCaptureNumber
 } _inputCaptureNumber;
 
 /*
- * Inicializació de la aplicación
- * */
+ * Initialize the CAN baud rate calculator application.
+ * This prepares internal state and initializes underlying capture hardware.
+ */
 void BRC_Init(void);
 /*
- * Esta función inicia la captura de pulsos en el bus de CAN,
- * el resultado se gurdad en AppPulseWidthArray
- * */
+ * Capture CAN bus timing pulses and calculate the baud rate.
+ *
+ * Parameters:
+ *   channel - input capture channel index to use for the measurement.
+ *
+ * Returns:
+ *   Calculated baud rate in bps on success, or 0 on failure.
+ */
 uint32_t BRC_CalculateBaudRate(uint8_t channel);
 
 
